@@ -25,6 +25,11 @@
     - [04 コンテナと通信](#04-コンテナと通信)
     - [05 コンテナ作成に慣れよう](#05-コンテナ作成に慣れよう)
     - [06 イメージの削除](#06-イメージの削除)
+  - [05 Dockerに複数のコンテナを入れて動かしてみよう](#05-dockerに複数のコンテナを入れて動かしてみよう)
+    - [01 WordPrerssの構築と導入の流れ](#01-wordprerssの構築と導入の流れ)
+    - [02  WordPressのコンテナとMySQLコンテナを作成し、動かしてみよう](#02--wordpressのコンテナとmysqlコンテナを作成し-動かしてみよう)
+    - [03 コマンド文を書けるようになろう](#03-コマンド文を書けるようになろう)
+    - [04 RedmineのコンテナとMariaDBのコンテナを作成し、練習してみよう](#04-redmineのコンテナとmariadbのコンテナを作成し-練習してみよう)
 
 <!-- /code_chunk_output -->
 
@@ -366,3 +371,137 @@ mysql        latest    5fc9b4335a45   4 days ago    635MB
 nginx        latest    786a14303c96   11 days ago   193MB
 ```
 - imageを消す前に、そのimageを使っているコンテナがないか、ある場合はそのコンテナを止めてからimageを消すこと
+
+## 05 Dockerに複数のコンテナを入れて動かしてみよう
+
+### 01 WordPrerssの構築と導入の流れ
+- wordpressはサーバにインストールして使う
+- Apache、DB、PHPの実行環境が必要
+![wordpress](./images/WordPress.png)
+- DBはコンテナ外に置くこともできるが、今回の練習ではコンテナに置く
+- プログラムがMySQLのDBにデータを書き込んだり、リクエストに応じてDBのデータを読み込む必要があるので、WordPressのコンテナとMySQLのコンテナは繋がっている必要がある→仮想ネットワークを作る必要がある
+- ネットワークを作るのは`docker network create {network}`
+
+### 02  WordPressのコンテナとMySQLコンテナを作成し、動かしてみよう
+```bash
+# ネットワークを作る
+❯ docker network create wordpress000net1                                                
+67e8dbbbe1412fcd5a3423ecf5928599b9f63b8ad62cd46adeb2fbfa5ee378cc
+
+# MySQLコンテナの作成・起動
+❯ docker run --name mysql000ex11 -dit \
+--net=wordpress000net1 \ # ネットワークと紐付け
+-e MYSQL_ROOT_PASSWORD=myrootpass \　# -eオプションは環境変数を指定できる
+-e MYSQL_DATABASE=wordpress000db \　# DBの名前
+-e MYSQL_USER=wordpress000kun \　# MySQLのユーザ名
+-e MYSQL_PASSWORD=wkunpass \ # MySQLのパスワード
+# 以下の引数はmysqlのオプション。Dockerのオプションではない。
+mysql \ # image. latestの8.4.0だと↓のプラグインが変数として読み込まれず、コンテナが起動せず。8.1にバージョンを指定して動いた。
+--character-set-server=utf8mb4 \ # 文字コードを指定
+--collation-server=utf8mb4_unicode_ci \ # 照合順序を指定
+--default-authentication-plugin=mysql_native_password　# 認証方式を指定（WordPressからMySQL8.0にまだ繋げない（未対応）ので、MySQLへの認証を古い方に変更する）
+
+# WordPressコンテナの作成・導入
+❯ docker run --name wordpress000ex12 -dit \
+--net=wordpress000net1 \
+-p 8085:80 \ # webサーバなので、ポート番号を指定
+# WordPressはDBを使うソフトウェアなので、接続しているDBの情報を設定する必要がある
+-e WORDPRESS_DB_HOST=mysql000ex11 \
+-e WORDPRESS_DB_NAME=wordpress000db \
+-e WORDPRESS_DB_USER=wordpress000kun \
+-e WORDPRESS_DB_PASSWORD=wkunpass \
+wordpress # image
+
+# 後始末
+docker stop wordpress000ex12
+docker stop mysql000ex11
+
+docker rm wordpress000ex12
+docker rm mysql000ex11
+
+docker network rm wordpress000net1
+```
+
+### 03 コマンド文を書けるようになろう
+- ソフトウェアとデータベースの関係
+- Linux + Webサーバ + プログラムの実行環境 + データベースの組み合わせ
+- WordPressは Apache + PHP + MySQL + Linux(**LAMP環境**)
+  - Apacheがnginxになったり、MySQLがMariaDBやPostgreSQLになったりする
+- [公式ドキュメント](https://docs.docker.com/reference/)
+
+### 04 RedmineのコンテナとMariaDBのコンテナを作成し、練習してみよう
+```bash
+# ネットワーク作成
+❯ docker network create redmine000net2  
+2423bd4587cdea6e61bfbd8e5ebe14b718e84a313d2277aa1e1efe5e2bcbe395
+
+# MySQLコンテナ作成
+❯ docker run --name mysql000ex13 -dit --net=redmine000net2 -e MYSQL_ROOT_PASSWORD=myrootpass -e MYSQL_DATABASE=redmine000db -e MYSQL_USER=redmine000kun -e MYSQL_PASSWORD=rkunpass mysql:8.3 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
+Unable to find image 'mysql:8.3' locally
+8.3: Pulling from library/mysql
+c6a0976a2dbe: Pull complete 
+8dd4f8e415ca: Pull complete 
+6e01a6ece3af: Pull complete 
+6cfdeffd9140: Pull complete 
+73fed55ee93c: Pull complete 
+83404f4e4847: Pull complete 
+aad53405df78: Pull complete 
+d9c5f6f4cc6e: Pull complete 
+e04d803ff9c7: Pull complete 
+f06a309d43da: Pull complete 
+Digest: sha256:9de9d54fecee6253130e65154b930978b1fcc336bcc86dfd06e89b72a2588ebe
+Status: Downloaded newer image for mysql:8.3
+1f2e2a5291c7934c41903564fafb1cf18c1997f2d1f3d096ae8bbdaabb0c57db
+
+# Redmineコンテナ作成
+# ネットワークのオプションの書き方がWordPressと異なる
+❯ docker run --name redmine000ex14 -dit --network redmine000net2 -p 8086:3000 -e REDMINE_DB_MYSQL=mysql000ex13 -e REDMINE_DB_DATABASE=redmine000db -e REDMINE_DB_USERNAME=redmine000kun -e REDMINE_DB_PASSWORD=rkunpass redmine
+Unable to find image 'redmine:latest' locally
+latest: Pulling from library/redmine
+22d97f6a5d13: Pull complete 
+49cd60c1d2b5: Pull complete 
+c4b90ec0aaef: Pull complete 
+5bfd5ca51729: Pull complete 
+d529a157b131: Pull complete 
+401df02c6f0e: Pull complete 
+66cae78f880a: Pull complete 
+642d2d8f2b95: Pull complete 
+800c159d4f8e: Pull complete 
+979bb3c2aa4d: Pull complete 
+b0a1e811b04c: Pull complete 
+86334ebf3b8f: Pull complete 
+5b02bd761ee9: Pull complete 
+Digest: sha256:2c0094bba9d6b505d5bfcde09201a333707546e84544ce3896f497385cdc7d4c
+Status: Downloaded newer image for redmine:latest
+74080ea91adcfad36fddbb62f8d19ee8cf730d6789368e18c98600e56e1b1451
+
+# MariaDBコンテナ作成
+❯ docker network create redmine000net3                                                                                        
+62c3543a0a4f37c1759331b78ca096a3349d68c6657634aed734adcccb0787e0
+
+# 環境変数の接頭辞に"MY_SQL"がついているが、そういうもの
+# MariaDBはMySQLの作者が作っているので、共通部分が多い
+❯ docker run --name mariadb000ex15 -dit --net=redmine000net3 -e MYSQL_ROOT_PASSWORD=mariarootpass -e MYSQL_DATABASE=redmine000db -e MYSQL_USER=redmine000kun -e MYSQL_PASSWORD=rkunpass mariadb --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
+Unable to find image 'mariadb:latest' locally
+latest: Pulling from library/mariadb
+ef8879b78976: Pull complete 
+105cbf2cf67d: Pull complete 
+ecf1df91ceb6: Pull complete 
+bc8390621d2f: Pull complete 
+f78b47a498ba: Pull complete 
+365f6e4fcf62: Pull complete 
+e5d7d520346a: Pull complete 
+da2c8ba9d98d: Pull complete 
+Digest: sha256:baca4137adc50f75a3d5ce91d8ef00e61d89159acdd152c4b81060a35fd66161
+Status: Downloaded newer image for mariadb:latest
+ae383a5d9a962426daf8c2017faeb03e1548ce2e6b1672066b294696aa160aa1
+
+# Redmineコンテナの作成・起動ß
+❯ docker run --name redmine000ex16 -dit --network redmine000net3 -p 8087:3000 -e REDMINE_DB_MYSQL=mariadb000ex15 -e REDMINE_DB_DATABASE=redmine000db -e REDMINE_DB_USERNAME=redmine000kun -e REDMINE_DB_PASSWORD=rkunpass redmine 
+adca13df4e075bc6afaab5494d6c7c095076d49458134bd4934c23a60a1cd452
+
+# コンテナ名がかぶると、エラー
+❯ docker run --name redmine000ex14 -dit --network redmine000net3 -p 8087:3000 -e REDMINE_DB_MYSQL=mariadb000ex15 -e REDMINE_DB_DATABASE=redmine000db -e REDMINE_DB_USERNAME=redmine000kun -e REDMINE_DB_PASSWORD=rkunpass redmine
+docker: Error response from daemon: Conflict. The container name "/redmine000ex14" is already in use by container "74080ea91adcfad36fddbb62f8d19ee8cf730d6789368e18c98600e56e1b1451". You have to remove (or rename) that container to be able to reuse that name.
+See 'docker run --help'.
+```
