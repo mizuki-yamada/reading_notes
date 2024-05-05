@@ -30,6 +30,13 @@
     - [02  WordPressのコンテナとMySQLコンテナを作成し、動かしてみよう](#02--wordpressのコンテナとmysqlコンテナを作成し-動かしてみよう)
     - [03 コマンド文を書けるようになろう](#03-コマンド文を書けるようになろう)
     - [04 RedmineのコンテナとMariaDBのコンテナを作成し、練習してみよう](#04-redmineのコンテナとmariadbのコンテナを作成し-練習してみよう)
+  - [06 応用的なコンテナの使い方を身に付けよう](#06-応用的なコンテナの使い方を身に付けよう)
+    - [01 自分に必要な技術を整理しよう](#01-自分に必要な技術を整理しよう)
+    - [02 コンテナとホスト間でファイルをコピーする](#02-コンテナとホスト間でファイルをコピーする)
+    - [03 ボリュームのマウント](#03-ボリュームのマウント)
+    - [04 コンテナのイメージ化](#04-コンテナのイメージ化)
+    - [05 コンテナの改造](#05-コンテナの改造)
+    - [06 Docker Hubへの登録](#06-docker-hubへの登録)
 
 <!-- /code_chunk_output -->
 
@@ -505,3 +512,73 @@ adca13df4e075bc6afaab5494d6c7c095076d49458134bd4934c23a60a1cd452
 docker: Error response from daemon: Conflict. The container name "/redmine000ex14" is already in use by container "74080ea91adcfad36fddbb62f8d19ee8cf730d6789368e18c98600e56e1b1451". You have to remove (or rename) that container to be able to reuse that name.
 See 'docker run --help'.
 ```
+
+## 06 応用的なコンテナの使い方を身に付けよう
+
+### 01 自分に必要な技術を整理しよう
+- サーバエンジニア、セキュリティエンジニアならば、Dockerの知識は必須
+- 作る人と使う人は違う
+
+### 02 コンテナとホスト間でファイルをコピーする
+- 自分のPCからコンテナにファイルをアップしたい or コンテナのファイルを自分のPCに落としてきたいとき
+- `docker cp コピー元のパス コピー先のパス`
+  - docker cp /Users/ユーザー名/Documents/index.html apa000ex19:/usr/local/apache2/htdocs/
+  - ホスト側のパス：いつもターミナルで打ち込むやつ
+  - コンテナ側のパス：{コンテナ名}:コンテナ上でのパス
+- やってみた
+```bash
+# ホストのDocuments配下にあるindex.htmlをapa000ex19コンテナの/usr/local/apache2/htdocs配下にコピー
+❯ docker cp ~/Documents/index.html apa000ex19:/usr/local/apache2/htdocs
+
+# apa000ex19コンテナの/usr/local/apache2/htdocs配下あるindex.htmlをホストのDocuments配下にコピー
+❯ docker cp apa000ex19:/usr/local/apache2/htdocs/index.html ~/Documents
+```
+
+### 03 ボリュームのマウント
+TBW
+
+### 04 コンテナのイメージ化
+- イメージの作成方法は2つ
+  - commitする
+    - `docker commit コンテナ名 作成するイメージ名`
+  - Dockerfileをbuildする
+    - Dockerfileには、元となるイメージや、実行したいコマンドなどを書く
+    - `docker build -t 作成するイメージ名（新しく作るイメージの名前） 材料フォルダのパス`
+      - 材料フォルダ：ホストマシン上でのDockerfileの保存場所。コンテナ内部に入れたいファイルも一緒に入れれる。
+    - FROM:元にするイメージを指定
+    - COPY:イメージにファイルやフォルダを追加
+      - コピー元のファイルは相対パスで指定する
+    - RUN:イメージをbuildするときに実行するコマンドを指定
+    - なるほどね。やっと意味がわかったぞ。
+
+### 05 コンテナの改造
+- コンテナの改造方法は2つ
+  - ファイルのやり取り
+    - ファイルのコピー、記憶領域のマウントによって実行
+  - Linuxコマンドで命令する
+    - `docker run`, `docker exec`コマンドをつけて`/bin/bash`を実行して、シェルを起動させる
+      - これで、コンテナ内部に入れる = Docker Engineへの命令はできなくなる（Dockerコマンドは効かなくなる）
+      - 抜ける時は`exit`
+- Docker Engineへの操作はコンテナ全体の管理に関わる操作
+- cf. コンテナ内部の操作は、コンテナの中にソフトウェアを追加したり、設定を変更したりなど
+  - 要するに、ターミナルの操作（厳密には違うかもしれないけど）と同じことをする
+- コンテナ内部への命令コマンドは、 Linuxのディストリビューションによって微妙に異なる
+  - 特に、ソフトウェアのインストール系コマンド
+    - Debian: `apt install`
+    - Red Hat: `yum install`
+    - ディストリビューションの違いだったんだ
+- 公式は、特に理由がない限りはDebianを推奨している
+
+### 06 Docker Hubへの登録
+- Dockerレジストリ：イメージの配布場所
+- リポジトリ：レジストリの中を区切った単位
+  - ソフトウェアごとに作成する
+  - リポジトリの中に、たくさんのimageがある
+- imageにはタグをつける必要がある
+  - タグ名の規則：`レジストリの場所/リポジトリの名前:バージョン番号`
+- イメージにタグ名をつけて複製する
+  - `docker tag コピー元のイメージ名 レジストリの場所/命名したいリポジトリ名:バージョン`
+  - `docker image ls`をすると、元のイメージと複製したイメージが表示される
+  - イメージIDは同じだが、別物として扱われているので、消したいときは全て消す必要がある
+- イメージのアップロード
+  - `docker push レジストリの場所/命名したいリポジトリ名:バージョン`
