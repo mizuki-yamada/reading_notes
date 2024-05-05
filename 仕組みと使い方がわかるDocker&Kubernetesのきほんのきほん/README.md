@@ -18,6 +18,13 @@
     - [01 Dockerを使うには](#01-dockerを使うには)
     - [02 Dockerのインストール](#02-dockerのインストール)
       - [03 Dockerの操作方法とコマンドプロンプト／ターミナルの起動](#03-dockerの操作方法とコマンドプロンプトターミナルの起動)
+  - [04 Dockerにコンテナを入れて動かしてみよう](#04-dockerにコンテナを入れて動かしてみよう)
+    - [01 Docker Engineの起動と終了](#01-docker-engineの起動と終了)
+    - [02 コンテナ操作の基本](#02-コンテナ操作の基本)
+    - [03 コンテナの作成・削除と、起動・停止](#03-コンテナの作成削除と-起動停止)
+    - [04 コンテナと通信](#04-コンテナと通信)
+    - [05 コンテナ作成に慣れよう](#05-コンテナ作成に慣れよう)
+    - [06 イメージの削除](#06-イメージの削除)
 
 <!-- /code_chunk_output -->
 
@@ -166,3 +173,196 @@
 - `docker run/stop {コンテナ名}`でコンテナの起動・停止ができる
 - ターミナルの終了≠Docker Engineの終了。サーバでDockerを使う場合、Docker Engineを止めると、コンテナを全てシャットダウンすることになるので、基本は止めない
 - 自分のPCではないLinuxサーバにインストールされたDocker Engineを動かしたい場合、そのサーバに対してSSHで接続する
+
+## 04 Dockerにコンテナを入れて動かしてみよう
+
+### 01 Docker Engineの起動と終了
+- Docker Engineを止める＝サーバも止める、になるので、Engineは基本起動しっぱなしにしておく。
+  - 自動起動の設定もオンにしておくのが無難
+  - Docker Engineも止めると、コンテナも止まる。コンテナは自動起動しないので、Engineが止まったらコンテナはコンテナで再起動が必要
+
+### 02 コンテナ操作の基本
+- コンテナ操作の基本は`docker`コマンド
+  - docker コマンド オプション 対象 引数
+- `docker version`の結果
+```bash
+❯ docker version
+Client:
+ Cloud integration: v1.0.35+desktop.13
+ Version:           26.0.0
+ API version:       1.45
+ Go version:        go1.21.8
+ Git commit:        2ae903e
+ Built:             Wed Mar 20 15:14:46 2024
+ OS/Arch:           darwin/arm64
+ Context:           desktop-linux
+
+Server: Docker Desktop 4.29.0 (145265)
+ Engine:
+  Version:          26.0.0
+  API version:      1.45 (minimum version 1.24)
+  Go version:       go1.21.8
+  Git commit:       8b79278
+  Built:            Wed Mar 20 15:18:02 2024
+  OS/Arch:          linux/arm64
+  Experimental:     false
+ containerd:
+  Version:          1.6.28
+  GitCommit:        ae07eda36dd25f8a1b98dfbf587313b99c0190bb
+ runc:
+  Version:          1.1.12
+  GitCommit:        v1.1.12-0-g51d5e94
+ docker-init:
+  Version:          0.19.0
+  GitCommit:        de40ad0
+```
+- 代表的なコマンド
+![major commnad](./images/major_commnad.png)
+  - 上位コマンドは省略もできる（昔の形式と互換性を保つため、今は`上位コマンド＋副コマンド`の形式に変更になっている）
+- コマンドの種類
+  - コンテナ操作関連...docker container {副コマンド} {オプション}
+    - start, stop, create, run, rm, exec, ls, cp, commit
+  - イメージ操作関連...docker image {副コマンド} {オプション}
+    - pull, rm, ls, build
+  - ボリューム操作関連...docker volume {副コマンド} {オプション} 
+    - create, inspect, ls, prune, rm
+  - ネットワーク操作関連...docker network {副コマンド} {オプション}
+    - connect, disconnect, create, inspect, ls, prune, rm 
+  - その他の上位コマンド
+    - checkpoint, node, plugin, secret, service, stack, swarm, system
+  - 単独コマンド
+    - login, logout, search, version
+
+### 03 コンテナの作成・削除と、起動・停止
+- docker pull + docker create + docker start = docker run
+  - イメージのダウンロード＋コンテナの作成＋コンテナの起動
+  - ![run](./images/run.png)
+- docker stop コンテナ名
+- docker rm コンテナ名
+- デーモン：UNIXやLinuxで動くプログラムのうち、常に待ち受けて、裏で動き続けるプログラム。メーラーデーモン。
+  - バックグラウンドで常に実行しているのが、デーモン（d）っで覚えとく
+- docker ps
+  - コンテナの起動状態を確認できる
+- コンテナでApacheを起動してみよう
+```bash
+# runしてみる
+# runの実行時にimageがない場合、自動でimageのダウンロードもしてくれる
+❯ docker run --name apa000ex1 -d httpd
+Unable to find image 'httpd:latest' locally
+latest: Pulling from library/httpd
+22d97f6a5d13: Pull complete 
+855b568ab02c: Pull complete 
+4f4fb700ef54: Pull complete 
+c521cc2c4e8a: Pull complete 
+98c8bced82bd: Pull complete 
+bae159c85a0b: Pull complete 
+Digest: sha256:36c8c79f900108f0f09fd4148ad35ade57cba0dc19d13f3d15be24ce94e6a639
+
+# コンテナの稼働状況を確認
+❯ docker ps                           
+CONTAINER ID   IMAGE     COMMAND              CREATED         STATUS         PORTS     NAMES
+c6da48446045   httpd     "httpd-foreground"   2 minutes ago   Up 2 minutes   80/tcp    apa000ex1
+
+# stop
+❯ docker stop apa000ex1
+apa000ex1
+
+# docker ps
+❯ docker ps            
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+
+❯ docker ps -a
+CONTAINER ID   IMAGE     COMMAND              CREATED         STATUS                      PORTS     NAMES
+c6da48446045   httpd     "httpd-foreground"   4 minutes ago   Exited (0) 42 seconds ago             apa000ex1
+# Exitedになっているので、コンテナは停止中なことがわかる
+
+# rm
+❯ docker rm apa000ex1                 
+apa000ex1
+
+❯ docker ps -a                         
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+# コンテナは何もなくなっている（削除済）
+```
+
+### 04 コンテナと通信
+- ApacheはWebサーバを提供するソフトウェアなので、Apacheが動いているサーバにhtmlファイルなどを置くと、ブラウザからのアクセスが可能になる
+- コンテナ外からのアクセスを可能にするために、ボート番号の指定が必要
+- ホスト（コンテナが存在する物理的なマシン）のポートと、コンテナのポートを指定する
+![communication](./images/communication.png)
+- やってみよう
+```bash
+# ポート番号を指定して、docker run
+❯ docker run --name apa000ex2 -d -p 8080:80 httpd
+d4628ae52e9a18e426b1620018736cce55777df0c1889beab1d6893d795509a2 # コンテナIDが返ってくる
+
+❯ docker ps                                      
+CONTAINER ID   IMAGE     COMMAND              CREATED          STATUS          PORTS                  NAMES
+d4628ae52e9a   httpd     "httpd-foreground"   31 seconds ago   Up 31 seconds   0.0.0.0:8080->80/tcp   apa000ex2
+```
+- `http://localhost:8080/`にアクセスして、Apacheの初期画面が出てきたのでOK
+
+### 05 コンテナ作成に慣れよう
+- Webサーバ用のコンテナは、通信することが前提なので、ポート番号の指定が必須
+  - コンテナを複数並列で立てるときは、物理マシンのポート番号は重複できないので、ずらす必要がある。コンテナ側のポート番号は重複していい。
+  - Apache, nginxは覚えておこう
+- データベース用のコンテナは、ルールバスワードの指定が必要
+- プログラムの実行環境用コンテナもある
+  - javaならopenjdk, pythonならpython、など
+```bash
+# 複数コンテナの起動、停止、削除はこうやってもできた
+❯ docker stop apa000ex3  apa000ex4 apa000ex5
+apa000ex3
+apa000ex4
+apa000ex5
+
+❯ docker start apa000ex3  apa000ex4 apa000ex5
+apa000ex3
+apa000ex4
+apa000ex5
+
+❯ docker rm apa000ex3  apa000ex4 apa000ex5  
+apa000ex3
+apa000ex4
+apa000ex5
+```
+- MySQLのコンテナを作ってみよう
+  - ちゃんと動かすには引数の指定が必要
+  - ここではルートパスワードのみを設定し、ちゃんと動いているかの確認はしない（docker psコマンドでの確認のみ）
+```bash
+❯ docker run --name mysql000ex7 -dit -e MYSQL_ROOT_PASSWORD=myrootpass mysql # -dit: バックグラウンド実行＆キーボード操作を可能にする
+Unable to find image 'mysql:latest' locally
+latest: Pulling from library/mysql
+c6a0976a2dbe: Pull complete 
+ae691a8c1b16: Pull complete 
+8fe011e50abc: Pull complete 
+c5c88c8fbaa8: Pull complete 
+25d028b2b1f1: Pull complete 
+bc284ef09f94: Pull complete 
+00367d65ff82: Pull complete 
+d7d4b7ff3dc2: Pull complete 
+bafe7641a560: Pull complete 
+d9b85ac37bb0: Pull complete 
+Digest: sha256:f7a8e140a7d6d1e6e0c99eeb0489c50a186ee4ac44ff55323a176529b9a43d33
+```
+
+### 06 イメージの削除
+- `docker image rm {image}`
+```bash
+❯ docker image rm httpd #imageのIDを指定して消すこともできる
+Untagged: httpd:latest
+Untagged: httpd@sha256:36c8c79f900108f0f09fd4148ad35ade57cba0dc19d13f3d15be24ce94e6a639
+Deleted: sha256:73acb239a8eb7a9ef5b6848a5b01bb26cc03d2262056705876bf7ac6ad781f02
+Deleted: sha256:37e83df10816d228adc72bc7fe72914bb229da49297eb015ecc7a491ac5673f2
+Deleted: sha256:eb13937d3e0d1130837a90aaad81cd716a70cc3448e65f9c465c5ca0a9c47fe6
+Deleted: sha256:630013052b48fbb0dfc8a01db6c815b16f4852860db09b018ae644d6654aa183
+Deleted: sha256:6884f690ae00745ce1fa942438738fee1a94ce458265385f8d0c46a14e40392e
+Deleted: sha256:02619b801b0cb5f3214954e026d3f73b2938cfb690dd6805a0657efe1b35d7f8
+
+# 存在するイメージ一覧を確認
+❯ docker image ls      
+REPOSITORY   TAG       IMAGE ID       CREATED       SIZE
+mysql        latest    5fc9b4335a45   4 days ago    635MB
+nginx        latest    786a14303c96   11 days ago   193MB
+```
+- imageを消す前に、そのimageを使っているコンテナがないか、ある場合はそのコンテナを止めてからimageを消すこと
