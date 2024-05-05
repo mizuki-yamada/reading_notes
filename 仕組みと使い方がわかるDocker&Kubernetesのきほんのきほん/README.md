@@ -37,6 +37,11 @@
     - [04 コンテナのイメージ化](#04-コンテナのイメージ化)
     - [05 コンテナの改造](#05-コンテナの改造)
     - [06 Docker Hubへの登録](#06-docker-hubへの登録)
+  - [07 Docker Composeについて学ぼう](#07-docker-composeについて学ぼう)
+    - [01 Docker Composeとは](#01-docker-composeとは)
+    - [02 Docker Composeのインストールと使い方](#02-docker-composeのインストールと使い方)
+    - [03 Docker Composeファイルの書き方](#03-docker-composeファイルの書き方)
+    - [04 Docker Composeを実行してみる](#04-docker-composeを実行してみる)
 
 <!-- /code_chunk_output -->
 
@@ -582,3 +587,44 @@ TBW
   - イメージIDは同じだが、別物として扱われているので、消したいときは全て消す必要がある
 - イメージのアップロード
   - `docker push レジストリの場所/命名したいリポジトリ名:バージョン`
+
+## 07 Docker Composeについて学ぼう
+
+### 01 Docker Composeとは
+- 複数コンテナでシステムを構成するとき、コンテナの作成に毎回コマンドを打つのは面倒
+- コンテナの作成に関わるコマンドの内容を1つのテキストファイルに書き込んで、一気に実行・停止・破棄できるようにするのがDocker Compose
+  - そのテキストファイルはyaml
+  - ネットワークやボリュームなど、コンテナの周辺の環境も一緒に定義できる
+- `docker-compose up`
+  - 定義ファイルに従い、イメージのダウンロード、コンテナの作成、起動をする
+  - `docker-compose -f /Users/ユーザー名/Documents/com_folder/docker-compose.yml up -d`
+    - カレントディレクトリで実行する場合は、yamlのファイルパスを省略できる
+- `docker-compose down`
+  - コンテナとネットワークを停止、削除する
+  - ボリュームとイメージはそのまま残る
+  - 停止のみしたい場合は、`docker-compose stop`
+- Docker ComposeとDockerfile
+  - 何を作るかの違い。コンテナ（とその周辺環境）かイメージか
+![Docker ComposeとDockerfile](./images/compose_dockerfile.png)
+
+### 02 Docker Composeのインストールと使い方
+- Docker Composeにはインストールが必要
+  - WindowsとMacで使うデスクトップ版の場合、すでにインストールされている
+  - Linuxの場合はDocker Composeとpython3の実行環境が必要
+```bash
+❯ docker-compose --version
+Docker Compose version v2.26.1-desktop.1
+```
+- 使い方
+  - ホストマシンに`docker-compose.yml`ファイルを作成する
+  - 1ディレクトリにyamlは基本1つ
+    - 複数yamlを定義したい場合は、ディレクトリを分ける or 引数で指定する
+
+### 03 Docker Composeファイルの書き方
+- なんとなくだが読めた
+- services:コンテナの情報
+- networks:ネットワークの情報
+- volumes:ボリュームの情報
+
+### 04 Docker Composeを実行してみる
+- 実行してみた
