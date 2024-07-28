@@ -16,6 +16,7 @@
 - [12 Atom](#12-atom)
 - [13 Atom Publishing Protocol(AtomPub)](#13-atom-publishing-protocolatompub)
 - [14 JSON(JavaScript Object Notation)](#14-jsonjavascript-object-notation)
+- [15~17](#1517)
 
 # 01, 02 webとはなにか、webの歴史
 
@@ -476,3 +477,6 @@
     - オリジナルのJSONをクライアントが指定したコールバック関数名でラップして、ドメインの異なるサーバからデータを取得する
 
 ![alt text](./images/JSONP.jpg)
+
+# 15~17
+実践系なのでザッピングした
