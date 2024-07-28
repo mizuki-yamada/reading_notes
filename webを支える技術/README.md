@@ -15,6 +15,7 @@
 - [11 microformats](#11-microformats)
 - [12 Atom](#12-atom)
 - [13 Atom Publishing Protocol(AtomPub)](#13-atom-publishing-protocolatompub)
+- [14 JSON(JavaScript Object Notation)](#14-jsonjavascript-object-notation)
 
 # 01, 02 webとはなにか、webの歴史
 
@@ -439,4 +440,39 @@
   - 基本的なリソースモデルとリンク機構を仕様として提供してくれているので、開発者の独自な設計部分が大幅に減る
 - 正直なところあまりピンときていないので、また戻ってくる
 
-![alt text](image.png)
+![alt text](./images/atompub.png)
+
+# 14 JSON(JavaScript Object Notation)
+- 軽量なデータ表現形式
+  - ハッシュ、配列などプログラミング言語から扱いやすいデータ構造を記述できる
+  - JavaScriptの記法でデータを記述できる
+  - 多くの言語でライブラリが用意されているので、プログラミング言語が違ってもデータの受け渡しができる
+- 組み込みで用意されているデータ型
+  - オブジェクト(`{}`で囲まれている)
+  - 配列
+  - 文字列
+    - `""`で囲む
+    - `\uXXXX`という形式でエスケープできる
+    - `\n`は「改行」になる
+  - 数値
+  - boolean
+  - null
+- それ以外のデータ型
+  - 日時
+    - 組み込みで用意がない。UNIX時間を数値で表現するのが一番単純
+    - タイムゾーンを使いたい場合は`toString()`の処理が必要だが、ブラウザによって表記揺れがある
+    - より標準的なのはISOフォーマット
+  - リンク
+    - URI（絶対URIがいい）を文字列として持つのが最も簡単
+- JSONP(JSON with Padding)
+  - クロスドメイン通信通信を実現する方法
+  - クロスドメイン通信の制限
+    - XMLHttpRequest（Ajaxで使うJavaScriptモジュール）は、JavaScriptファイルを取得したサーバのみとしか通信できない
+      - 違うのと通信できると、ブラウザに入力された情報が不正なサーバに送信できてしまうため
+    - ただ、これはサービスを作るという点では（いろんなサーバからデータを取得したいので）不便
+  - 解決方法
+    - `<script>`タグで複数のサイトからJavaScriptファイルを読み込む（scriptは歴史的経緯でセキュリティ制限を受けない）
+    - この性質を利用してクロスドメイン通信を実現するのがJSONP
+    - オリジナルのJSONをクライアントが指定したコールバック関数名でラップして、ドメインの異なるサーバからデータを取得する
+
+![alt text](./images/JSONP.jpg)
